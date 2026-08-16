@@ -36,7 +36,8 @@ testable in isolation and reusable by other consumers.
 ## Included Configuration
 
 - **Rust edition 2024**, toolchain pinned to an exact version in
-  `.mise.toml` and mirrored by `rust-version` in `Cargo.toml`
+  `.mise.toml`; a supply-chain pin, not an MSRV (there is deliberately
+  no `rust-version` — see `Cargo.toml`)
 - **Single crate, dual target**: `src/lib.rs` holds the library, `src/main.rs`
   is the CLI binary that calls into it. `cargo test` exercises both.
 - **clap 4 (derive)** for CLI argument parsing

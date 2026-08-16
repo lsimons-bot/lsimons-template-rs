@@ -51,8 +51,11 @@ docs/spec/                Feature specifications
 
 **Code quality:**
 
-- Edition 2024. The toolchain is pinned exactly in `.mise.toml`, and
-  `rust-version` in `Cargo.toml` mirrors it — bump both together.
+- Edition 2024. The toolchain is exact-pinned in `.mise.toml`.
+- No `rust-version`: resolver 3 caps dependency resolution at a rustc
+  version either way, and omitting it makes that cap track the toolchain
+  pin rather than go stale. Declare one only when publishing a library,
+  together with a CI job that builds with it.
 - `cargo clippy -- -D warnings` must be clean (warn on `all` +
   `pedantic`). `.mise.toml` sets `RUSTFLAGS=-D warnings`, so a bare
   `cargo build` outside mise is a weaker check than the gate.

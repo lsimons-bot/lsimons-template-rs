@@ -1,8 +1,9 @@
 # mise: https://mise.jdx.dev/
 #
 # `mise install` installs everything under [tools]; `mise run <task>`
-# wraps cargo and the audit tools. Cargo.toml's `rust-version` remains
-# the MSRV authority, and is kept in step with the `rust` pin below.
+# wraps cargo and the audit tools. The `rust` pin below is the only
+# toolchain declaration — there is deliberately no `rust-version` in
+# Cargo.toml; see the comment there.
 
 [settings]
 minimum_release_age = "7d"
@@ -22,7 +23,7 @@ lockfile = true
 #
 # The cost is that nothing here is covered by dependabot, so these go
 # stale silently. Refresh them deliberately with `mise up`, and read the
-# diff. Bump `rust-version` in Cargo.toml along with `rust`.
+# diff. Pinning rust here is a supply-chain pin, not an MSRV.
 [tools]
 rust = "1.97.1"
 # Used by `mise run audit`; must match `version:` in the workflow's
