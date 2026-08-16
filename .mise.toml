@@ -94,8 +94,15 @@ run = "cargo-deny --all-features check advisories sources"
 # Without a token zizmor silently falls back to offline and skips the
 # `impostor-commit` and `known-vulnerable-actions` audits, which is an
 # unverified result, not a pass — so refuse to run rather than exit 0 on
-# a weaker check than the name promises. The gate is at the top, so the
-# task is all-or-nothing rather than partly-run.
+# a weaker check than the name promises.
+#
+# `deny` runs through `depends`, not as the last line of the script. It
+# used to be the last line, which put it *after* the token gate — and
+# cargo-deny needs no token, so on a machine without `gh auth login` the
+# RustSec scan silently never ran, even though this task's own name
+# promised it. Via `depends` it runs before the gate is reached, so a
+# missing token now costs you the zizmor half only. CI is unaffected
+# either way: it runs `deny` in its own job.
 #
 # zizmor's collect mode is left at its default, which already picks up
 # .github/dependabot.yml as well as the workflows; the only thing
@@ -106,6 +113,7 @@ run = "cargo-deny --all-features check advisories sources"
 # marginally stricter than the zizmor job.
 [tasks.audit]
 description = "zizmor audit of workflows + cargo-deny audit of Cargo.lock"
+depends = ["deny"]
 run = """
 set -e
 GH_TOKEN=$(gh auth token 2>/dev/null) || true
@@ -120,7 +128,6 @@ export GH_TOKEN
 # even though the gate above passed. GH_TOKEN is the one we vouched for.
 unset GITHUB_TOKEN
 zizmor --strict-collection .
-mise run deny
 """
 
 [tasks.ci-watch]

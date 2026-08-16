@@ -86,6 +86,10 @@ docs/spec/                Feature specifications
 - Every tool in `.mise.toml` is pinned to an exact version, the Rust
   toolchain included. Nothing there is covered by dependabot, so refresh
   it deliberately with `mise up` and read the diff.
+- `mise run audit` runs `deny` through `depends`, so it happens before
+  the GitHub-token gate. cargo-deny needs no token; when it was the last
+  line of the script instead, a machine without `gh auth login` ran no
+  RustSec scan at all while the task's name still promised one.
 - GitHub Actions are pinned to full-length commit SHAs with a `# vX.Y.Z`
   comment, and `zizmor` enforces that in CI.
 - New dependencies must come from crates.io; `deny.toml`'s `sources`

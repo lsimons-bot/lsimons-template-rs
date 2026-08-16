@@ -114,7 +114,8 @@ mise run ci-watch     # watch GitHub Actions for the current branch
 zizmor's online audits, both for the advisory database — which is why
 they are not part of `mise run ci`. `audit` refuses to run without a
 GitHub token rather than silently falling back to the weaker offline
-check.
+check, but it runs `deny` first, so a missing token costs you the zizmor
+half only: cargo-deny needs no token and should not be gated behind one.
 
 ## When to Promote to a Workspace
 
