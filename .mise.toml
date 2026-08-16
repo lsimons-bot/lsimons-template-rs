@@ -4,6 +4,10 @@
 # wraps cargo and the audit tools. Cargo.toml's `rust-version` remains
 # the MSRV authority, and is kept in step with the `rust` pin below.
 
+[settings]
+minimum_release_age = "7d"
+lockfile = true
+
 # Every tool is pinned to an exact version, deliberately and without
 # exception — including the Rust toolchain. This is a supply-chain rule,
 # not a stability one: an upstream compromise must never be
