@@ -54,10 +54,8 @@ docs/spec/                Feature specifications
 - Edition 2024. The toolchain is pinned exactly in `.mise.toml`, and
   `rust-version` in `Cargo.toml` mirrors it — bump both together.
 - `cargo clippy -- -D warnings` must be clean (warn on `all` +
-  `pedantic`). `RUSTFLAGS=-D warnings` is set by `.mise.toml` and by the
-  CI workflow, so every `warn` level in `Cargo.toml` is in practice a
-  `deny` there. A bare `cargo build` in a shell without mise active does
-  not get this, so a warning can look harmless locally and still fail CI.
+  `pedantic`). `.mise.toml` sets `RUSTFLAGS=-D warnings`, so a bare
+  `cargo build` outside mise is a weaker check than the gate.
 - Code must be `cargo fmt`-clean; do not hand-format around rustfmt.
 - No `unsafe` (`unsafe_code = "forbid"` in `Cargo.toml`).
 - Library and CLI share no implicit state; business logic belongs in
@@ -65,35 +63,27 @@ docs/spec/                Feature specifications
 - Tests for all public functions; integration tests cover CLI behaviour.
 - Public items need doc comments, and fallible ones need an `# Errors`
   section — `mise run doc` denies rustdoc warnings.
-- Do not silence a lint without a written justification on the same
-  line. Prefer `#[expect(lint, reason = "...")]` over `#[allow(...)]`:
-  `expect` warns once the suppression stops being necessary, so it
-  cleans itself up. Suppress when the cause is outside this repo; fix
-  the cause when it is inside.
-- Never weaken a control to make a check pass: do not unpin an action,
-  drop a lint group from `Cargo.toml`, add an `ignore` to `deny.toml`
-  without a linked advisory rationale, or delete a failing test.
+- No unexplained lint suppression. Prefer
+  `#[expect(lint, reason = "...")]` over `#[allow(...)]` — it warns once
+  the suppression is no longer needed. Prefer fixing the cause.
+- Never weaken a control to make a check pass: no unpinned actions, no
+  dropped lint groups, no `deny.toml` `ignore` without a linked
+  advisory rationale, no deleted tests.
 
 **Supply chain:**
 
 - `Cargo.lock` is committed and must stay in the tree. Every cargo task
-  in `.mise.toml` (`build`, `test`, `lint`, `doc`) passes `--locked`, so
-  a task that wants to change the lock is a signal, not a nuisance.
-- Dependencies stay on caret ranges in `Cargo.toml`. `Cargo.lock` is the
-  pin — it fixes an exact version and checksum for each crate — and
-  dependabot's `cargo` ecosystem updates the lock directly. Hard-pinning
-  the manifest would fight it.
-- Every tool in `.mise.toml` is pinned to an exact version, the Rust
-  toolchain included. Nothing there is covered by dependabot, so refresh
-  it deliberately with `mise up` and read the diff.
-- `mise run audit` runs `deny` through `depends`, so it happens before
-  the GitHub-token gate. cargo-deny needs no token; when it was the last
-  line of the script instead, a machine without `gh auth login` ran no
-  RustSec scan at all while the task's name still promised one.
-- GitHub Actions are pinned to full-length commit SHAs with a `# vX.Y.Z`
-  comment, and `zizmor` enforces that in CI.
+  passes `--locked`, so a task that wants to relock is a signal.
+- Dependencies stay on caret ranges — `Cargo.lock` is the pin, and
+  dependabot updates it directly.
 - New dependencies must come from crates.io; `deny.toml`'s `sources`
   check rejects git and path dependencies.
+- `mise run deny` must be clean. `mise run audit` runs it through
+  `depends`, so it happens before the GitHub-token gate — cargo-deny
+  needs no token.
+- Pin GitHub Actions to full-length commit SHAs; `zizmor` enforces it.
+- Every `.mise.toml` tool is exact-pinned and invisible to dependabot;
+  refresh with `mise up` and read the diff.
 
 ## Commit Message Convention
 
@@ -105,30 +95,11 @@ Follow [Conventional Commits](https://conventionalcommits.org/):
 
 ## Session Completion
 
-Work is NOT complete until every change is committed, pushed, and CI passes.
+Work is not complete until every change is committed, pushed, and CI passes.
 
-1. **Quality gates** (if code changed):
-   ```bash
-   mise run ci
-   ```
+1. `mise run ci` (or the tasks that changed)
+2. Commit everything — do not leave the working tree dirty
+3. `git pull --rebase && git push`
+4. `mise run ci-watch`; on failure `gh run view --log-failed`, fix, repeat
 
-2. **Commit**: stage and commit every change from this session. Do not leave the working tree dirty.
-   ```bash
-   git status              # review untracked and unstaged files
-   git add <files>
-   git commit -m "<type>(<scope>): <description>"
-   ```
-
-3. **Push**:
-   ```bash
-   git pull --rebase && git push
-   git status  # must show "up to date with origin"
-   ```
-
-4. **Verify CI**:
-   ```bash
-   mise run ci-watch
-   ```
-   On failure, inspect with `gh run view --log-failed`, fix, commit, push, and re-watch.
-
-Never stop before CI is green. If anything fails, resolve and retry.
+Never stop before CI is green.
